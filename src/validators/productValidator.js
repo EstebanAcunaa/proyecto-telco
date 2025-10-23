@@ -16,7 +16,7 @@ export const createProductSchema = Joi.object({
     }),
 
     category: Joi.string()
-     .valid('Zapatillas', 'ropa', 'perfumes')
+     .valid('zapatillas', 'ropa', 'perfumes')
      .required()
      .messages({
         'any.only': 'La categoria debe ser: zapatillas, ropa o perfumes',
@@ -35,7 +35,7 @@ export const createProductSchema = Joi.object({
      stock: Joi.number()
      .integer()
      .min(0)
-     .required
+     .required()
      .messages({
         'number.base': 'El stock debe ser un numero',
         'number.integer': 'El stock debe ser un numero entero',

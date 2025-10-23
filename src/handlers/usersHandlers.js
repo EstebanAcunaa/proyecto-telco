@@ -1,95 +1,108 @@
-import { required } from "joi";
+import * as userController from '../controllers/userControllers.js';
+import {
+    createUserSchema,
+    updateUserSchema,
+    idSchema
+} from '../validators/userValidator.js';
 
-export const getAllUsers = (req, res) =>{
-    res.status(200).json({
-        message: 'Lista de usuarios obtenida correctamente',
-        count: users.length,
-        data: users
-    });
+
+//GET -- OBTENER LOS USUARIOS
+
+export const getAllUsers = async (req, res, next) => {
+    try{
+        const result = userController.getAllUsersService();
+
+        res.status(200).json({
+            message: 'Lista de usuarios obtenida exitosamente',
+            ...result
+        });
+    }catch(error){
+        next(error);
+    }
 };
 
 
-//Obtener los usuarios por ID
+//GET --OBTENER LOS USUARIOS POR ID
 
-export const getUserById = (req, res) =>{
-    const {id} = req.params;
-    const user = users.find(u => u.id === parseInt(id));
-    if(!user){
-        return res.status(404).json({
-            message: 'Usuario no encontrado',
-            id: id
+export const getUserById = async (req, res, next) => {
+    try{
+        const {id} = req.params;
+
+        //validar el ID usando await
+
+        await idSchema.validateAsync(parseInt(id));
+        const user = userController.getUserByIdService(id);
+
+        res.status(200).json({
+            message: 'Usuario encontrado',
+            data: user
         });
+    }catch(error){
+        next(error);
     }
-    res.status(200).json({
-        message: 'Usuario encontrado',
-        data: user
-    });
 };
 
 
-//POST Crear un nuevo usuario
+//POST -- CREAR USUARIO NUEVO
 
-export const createUser = (req, res) =>{
-    const{name, mail, role} = req.body;
+export const createUser = async (req, res, next) => {
+    try{
+        //Validar el id 
+        const validatedData = await createUserSchema.validateAsync(req.body);
 
-    if(!name || !mail){
-        return res.status(400).json({
-            message: 'Faltan campos obligatorios',
-            required: ['name', 'mail']
+        const newUser = userController.createUserService(validatedData);
+
+        res.status(201).json({
+            message: 'Usuario creado con exito',
+            data: newUser
         });
+    }catch(error){
+        next(error);
     }
-    const newUser ={
-        id: users.length > 0 ? Math.max(...users.map(u=> u.id)) + 1 : 1,
-        name, 
-        mail,
-        role: role || 'user'
-    };
-    users.push(201).json({
-        message: 'Usuario nuevo creado exitosamente',
-        data: newUser
-    });
 };
 
-export const updateUser = (req, res) =>{
-    const {id} = req.params;
-    const {name, mail, role} = req.body;
-    
-    const userIndex = users.findIndex(u => u.id === parseInt(id));
+//PUT ACTUALIZAR UN USUARIO 
 
-    if(userIndex === -1){
-        return res.status(404).json({
-            message: 'Usuario no encontrado',
-            id: id
+export const updateUser = async (req, res, next) => {
+    try{
+        const {id} = req.params;
+
+        //Validar el id
+        await idSchema.validateAsync(parseInt(id));
+       
+        //Validar datos del body
+
+        const validatedData = await updateUserSchema.validateAsync(req.body);
+
+        const updatedUser = userController.updateUserService(id, validatedData);
+
+        res.status(200).json({
+            message: 'Usuario actualizado correctamente',
+            data: updateUser
         });
+    }catch(error){
+        next(error);
     }
-
-    users[userIndex] = {
-        ...user[userIndex],
-        ...(name && {name}),
-        ...(mail && {mail}),
-        ...(role && {role})
-    };
-    res.status(200).json({
-        message: 'Usuario actualizado correctamente',
-        data: users[userIndex]
-    });
 };
 
-export const deleteUser = (req, res) => {
-    const {id} = req.params;
-    const userIndex = users.findIndex(u=> u.id === parseInt(id));
 
-    if (userIndex === -1){
-        return res.status(404).json({
-            message: 'Usuario no encontrado',
-            id: id
+//DELETE -- ELIMINAR UN USUARIO
+
+export const deleteUser = async (req, res, next) => {
+    try{
+        const {id} = req.params
+
+        //Validar el id
+
+        await idSchema.validateAsync(parseInt(id));
+
+        const deletedUser = userController.deleteUserService(id);
+
+        res.status(200).json({
+            message: 'Usuario eliminado exitosamente',
+            data: deletedUser
         });
+    }catch(error){
+        next(error);
     }
-    const deletedUser = users[userIndex];
-    users = users.filter(u => u.id !== parseInt(id));
-
-    res.status(200).json({
-        message: 'usuario eliminado correctamente',
-        data: deletedUser
-    });
 };

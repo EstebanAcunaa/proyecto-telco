@@ -16,7 +16,7 @@ router.get('/', getAllProducts);
 
 //GET api/products/:id - Obtener los productos por ID
 
-router.get('/', getProductById);
+router.get('/:id', getProductById);
 
 //Post /api/products - Crear un producto nuevo 
 
@@ -24,10 +24,10 @@ router.post('/', createProduct);
 
 //DELETE /api/products - Eliminar un producto 
 
-router.delete('/', deleteProduct);
+router.delete('/:id', deleteProduct);
 
 //PUT /api/products - Actualizar un producto
 
-router.put('/', updateProduct);
+router.put('/:id', updateProduct);
 
 export default router;

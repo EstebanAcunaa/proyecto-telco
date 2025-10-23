@@ -7,7 +7,7 @@ import {
     updateUser,
 } from '../handlers/usersHandlers.js';
 
-const Router = Router();
+const router = Router();
 
 //GET -- Obtener todos los usuarios
 

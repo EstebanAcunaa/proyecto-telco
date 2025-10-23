@@ -1,4 +1,3 @@
-import { expression } from 'joi';
 import * as productController from '../controllers/productsControllers.js';
 import {
     createProductSchema,
@@ -98,7 +97,7 @@ export const deleteProduct = async (req, res, next) => {
         //validar id
         await idSchema.validateAsync(parseInt(id));
 
-        const deleteProduct = productController.deleteProductService(id);
+        const deletedProduct = productController.deleteProductService(id);
 
         res.status(200).json({
             message: 'Producto eliminado exitosamente',

@@ -81,7 +81,8 @@ export const database = {
     { 
       id: 1, 
       name: 'Juan Pérez', 
-      email: 'juan@example.com', 
+      email: 'juan@example.com',
+      password: '$2b$10$PrLqypZGOKMKGf3GOAN5I.DCb0uFee/ea0J5scu5Rc8pMp9wqnZCO' ,
       role: 'admin',
       createdAt: new Date()
     },
@@ -89,6 +90,7 @@ export const database = {
       id: 2, 
       name: 'María García', 
       email: 'maria@example.com', 
+      password: '$2b$10$PrrjW7vM7yVp8uBfzRDpPuCbcU.AzYQ58PNjEzn1qxtJXRqnUxk9q'
       role: 'user',
       createdAt: new Date()
     },
@@ -96,6 +98,7 @@ export const database = {
       id: 3, 
       name: 'Carlos López', 
       email: 'carlos@example.com', 
+      password: '$2b$10$2M.YvnB6M9VNs0MuRhBP2OJ.gIJw7WGxtdnUl7IjptgpPB4QKQaX2'
       role: 'user',
       createdAt: new Date()
     }
