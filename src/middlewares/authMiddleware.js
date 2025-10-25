@@ -1,4 +1,4 @@
-import { verifyToken } from "../utils/jwt";
+import { verifyToken } from "../utils/jwt.js";
 
 //VERIFICAR QUE EL USUARIO ESTA AUTENTICADO
 
@@ -37,7 +37,7 @@ export const authenticate = (req, res, next) => {
 
 export const authorize = (...allowedRoles) => {
     return (req, res, next) => {
-        if(req.user){
+        if(!req.user){
             return res.status(401).json({
                 error: 'No autorizado'
             });
