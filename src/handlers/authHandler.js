@@ -1,4 +1,4 @@
-import { registerService, loginService, getProfileService } from "../controllers/authControllers";
+import { registerService, loginService, getProfileService } from "../controllers/authControllers.js";
 
 //--------Registro
 
@@ -33,12 +33,12 @@ export const login = async (req, res, next) => {
 
 export const getProfile = async (req, res, next) => {
     try{
-        //req.user 
+        //req.user
         const user = getProfileService(req.user.id);
 
         res.status(200).json({
             message: 'Perfil obtenido con exito',
-            data: result
+            data: user
         });
     }catch(error){
         next(error);

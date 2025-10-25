@@ -1,5 +1,4 @@
-import { JsonWebTokenError } from "jsonwebtoken";
-import { token } from "morgan";
+import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_por_Defecto_cambiar';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7D';

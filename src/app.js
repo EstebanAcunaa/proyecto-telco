@@ -28,6 +28,7 @@ app.get('/', (req, res) => {
 //Rutas api
 app.use('/api/products', productoRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 
 //MIDDLEWARE rutas no encontradas
 app.use(notFoundHandler);
