@@ -14,7 +14,8 @@ export const connectDB = async () => {
         console.log(`MongoDB conectado: ${conn.connection.host}`);
         console.log(`Base de datos : ${conn.connection.name}`);
     } catch (error) {
-        console.log('Error al conectar a la base', error.mensage);
+        console.log('Error al conectar a la base de datos:', error.message);
+        console.error('Detalles del error:', error);
         process.exit(1); //Sale si no hay conexion
     }
 }

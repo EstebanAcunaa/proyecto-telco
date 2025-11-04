@@ -10,7 +10,7 @@ import {
 
 export const getAllUsers = async (req, res, next) => {
     try{
-        const result = userController.getAllUsersService();
+        const result = await userController.getAllUsersService();
 
         res.status(200).json({
             message: 'Lista de usuarios obtenida exitosamente',
@@ -28,10 +28,12 @@ export const getUserById = async (req, res, next) => {
     try{
         const {id} = req.params;
 
-        //validar el ID usando await
+        //Validar ID con Mongoose ObjectId
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new Error('ID de usuario inválido');
+        }
 
-        await idSchema.validateAsync(parseInt(id));
-        const user = userController.getUserByIdService(id);
+        const user = await userController.getUserByIdService(id);
 
         res.status(200).json({
             message: 'Usuario encontrado',
@@ -47,10 +49,10 @@ export const getUserById = async (req, res, next) => {
 
 export const createUser = async (req, res, next) => {
     try{
-        //Validar el id 
+        //Validar datos del body
         const validatedData = await createUserSchema.validateAsync(req.body);
 
-        const newUser = userController.createUserService(validatedData);
+        const newUser = await userController.createUserService(validatedData);
 
         res.status(201).json({
             message: 'Usuario creado con exito',
@@ -61,20 +63,21 @@ export const createUser = async (req, res, next) => {
     }
 };
 
-//PUT ACTUALIZAR UN USUARIO 
+//PUT ACTUALIZAR UN USUARIO
 
 export const updateUser = async (req, res, next) => {
     try{
         const {id} = req.params;
 
-        //Validar el id
-        await idSchema.validateAsync(parseInt(id));
-       
-        //Validar datos del body
+        //Validar ID con Mongoose ObjectId
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new Error('ID de usuario inválido');
+        }
 
+        //Validar datos del body
         const validatedData = await updateUserSchema.validateAsync(req.body);
 
-        const updatedUser = userController.updateUserService(id, validatedData);
+        const updatedUser = await userController.updateUserService(id, validatedData);
 
         res.status(200).json({
             message: 'Usuario actualizado correctamente',
@@ -90,13 +93,14 @@ export const updateUser = async (req, res, next) => {
 
 export const deleteUser = async (req, res, next) => {
     try{
-        const {id} = req.params
+        const {id} = req.params;
 
-        //Validar el id
+        //Validar ID con Mongoose ObjectId
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new Error('ID de usuario inválido');
+        }
 
-        await idSchema.validateAsync(parseInt(id));
-
-        const deletedUser = userController.deleteUserService(id);
+        const deletedUser = await userController.deleteUserService(id);
 
         res.status(200).json({
             message: 'Usuario eliminado exitosamente',
