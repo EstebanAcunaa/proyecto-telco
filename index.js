@@ -1,8 +1,26 @@
 import app from './src/app.js';
+import { connectDB } from './src/config/database.js';
+import dotenv from 'dotenv';
 
-const PORT = 3001;
+dotenv.config();
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  
-});
+const PORT = process.env.PORT || 3001;
+
+//CONECTAR CON LA BASE ANTES DE INICIAR EL SERVIDOR
+
+const startServer = async () => {
+  try {
+    
+    await connectDB();
+    app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    });
+
+  } catch (error) {
+    console.error('Error al iniciar el servidor:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
