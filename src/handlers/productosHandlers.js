@@ -29,7 +29,7 @@ export const getProductById = async (req, res, next) => {
         //Validar ID 
         await idSchema.validateAsync(parseInt(id));
 
-        const product = productController.getAllProductsService(id);
+        const product = productController.getProductByIdService(id);
 
         res.status(200).json({
             message: 'Producto encontrado',
@@ -50,7 +50,7 @@ export const createProduct = async (req, res, next) => {
 
         const newProduct = productController.createProductService(validatedData);
 
-        res.status(200).json({
+        res.status(201).json({
             message: 'Producto creado exitosamente',
             data: newProduct
         });
