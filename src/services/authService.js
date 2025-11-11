@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import {database, getNextId } from '../database/db.js';
+import User from '../models/User.js';
 import { generateToken } from "../utils/jwt.js";
 import {BusinessError, NotFoundError } from '../middlewares/errorHandler.js';
 
@@ -9,45 +9,41 @@ export const registerService = async (userData) => {
     const {name, email, password, role = 'user'} = userData;
 
     //verificar si el mail ya existe
-
-    const existingUser = database.users.find(
-        u => u.email.toLowerCase() === email.toLowerCase()
-    );
+    const existingUser = await User.findOne({
+        email: email.toLowerCase()
+    });
 
     if(existingUser){
         throw new BusinessError('El mail ya se encuentra registrado', 409);
     }
 
     //Hashear la pass
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     //Crear un nuevo usuario
-
-    const newUser = {
-        id: getNextId('users'),
+    const newUser = new User({
         name,
         email: email.toLowerCase(),
         password: hashedPassword,
         role,
-        createdAt: new Date()
-    };
+        isActive: true
+    });
 
-    database.users.push(newUser);
+    await newUser.save();
 
     //Generar token
-
     const token = generateToken({
-        id: newUser.id,
+        id: newUser._id.toString(),
         email: newUser.email,
         role: newUser.role
     });
 
     //No devolver la pass
+    const userObject = newUser.toObject();
+    delete userObject.password;
 
-    const {password: _, ...userWithoutPassword} = newUser;
     return{
-        user: userWithoutPassword,
+        user: userObject,
         token
     };
 };
@@ -57,50 +53,47 @@ export const registerService = async (userData) => {
 export const loginService = async (credentials) => {
     const {email, password} = credentials;
 
-    //buscar usuario por email
-    const user = database.users.find(
-        u => u.email.toLowerCase() === email.toLowerCase()
-    );
+    //buscar usuario por email (incluyendo password que normalmente está excluido)
+    const user = await User.findOne({
+        email: email.toLowerCase(),
+        isActive: true
+    }).select('+password');
+
     if(!user){
         throw new NotFoundError('Usuario', email);
     }
 
-    //Verificar contra
-
-    const isPasswordValid = await bcrypt.compare(password, user.password)
+    //Verificar contraseña
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if(!isPasswordValid){
         throw new BusinessError('Contraseña incorrecta', 401);
     }
 
     //Generar token
-
     const token = generateToken({
-        id: user.id,
+        id: user._id.toString(),
         email: user.email,
         role: user.role
     });
 
-
-    //No devolver la contra
-
-    const { password: _, ...userWithoutPassword } = user;
+    //No devolver la contraseña
+    const userObject = user.toObject();
+    delete userObject.password;
 
     return {
-        user: userWithoutPassword,
+        user: userObject,
         token
     };
 };
 
 //Obtener perfil
 
-export const getProfileService = (userId) => {
-    const user = database.users.find(u => u.id === parseInt(userId));
+export const getProfileService = async (userId) => {
+    const user = await User.findById(userId).select('-password');
 
-    if(!user){
+    if(!user || !user.isActive){
         throw new NotFoundError ('Usuario', userId);
     }
 
-    //No devolver la contra 
-    const {password: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    return user;
 };

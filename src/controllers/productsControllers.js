@@ -1,22 +1,23 @@
-import { database, getNextId } from '../database/db.js';
+import Product from '../models/Product.js';
 import { NotFoundError, BusinessError } from '../middlewares/errorHandler.js';
 
 //===== OBTENGO TODOS LOS PRODUCTOS
 
-export const getAllProductsService = () => {
+export const getAllProductsService = async () => {
+    const products = await Product.find({ isActive: true });
     return{
-        count: database.products.length,
-        products: database.products,
+        count: products.length,
+        products: products,
     };
 };
 
 
 // ========== OBTENER PRODUCTOS POR ID
 
-export const getProductByIdService = (id) =>{
-    const product= database.products.find(p => p.id === parseInt(id));
+export const getProductByIdService = async (id) =>{
+    const product = await Product.findById(id);
 
-    if(!product){
+    if(!product || !product.isActive){
         throw new NotFoundError ('Producto', id);
     }
     return product;
@@ -24,14 +25,15 @@ export const getProductByIdService = (id) =>{
 
 //======================== OBTENER PRODUCTOS POR CATEGORIA
 
-export const getProductsByCategoryService = (category) => {
+export const getProductsByCategoryService = async (category) => {
     const validCategories = ['zapatillas', 'ropa', 'perfumes'];
     if(!validCategories.includes(category.toLowerCase())){
         throw new BusinessError('Categoria invalida. Debe ser zapatilla, perfume o ropa', 400);
     }
-    const products = database.products.filter(
-        p => p.category.toLowerCase() === category.toLowerCase()
-    );
+    const products = await Product.find({
+        category: category.toLowerCase(),
+        isActive: true
+    });
     return {
         count: products.length,
         category,
@@ -42,10 +44,11 @@ export const getProductsByCategoryService = (category) => {
 
 //==================== OBTENER PRODUCTOS POR MARCA
 
-export const getProductsByBrandService = (brand) => {
-    const products = database.products.filter(
-        p => p.brand && p.brand.toLowerCase() === brand.toLowerCase()
-    );
+export const getProductsByBrandService = async (brand) => {
+    const products = await Product.find({
+        brand: new RegExp(`^${brand}$`, 'i'),
+        isActive: true
+    });
     return{
         count: products.length,
         brand,
@@ -55,14 +58,15 @@ export const getProductsByBrandService = (brand) => {
 
 //==================== OBTENER PRODUCTOS POR GENERO
 
-export const getProductsByGenderService = (gender) => {
+export const getProductsByGenderService = async (gender) => {
     const validGenders = ['hombre', 'mujer', 'unisex'];
     if(!validGenders.includes(gender.toLowerCase())){
         throw new BusinessError ('Genero invalido. Debe ser: hombre, mujer o unisex', 400)
     }
-    const products = database.products.filter(
-        p => p.gender && p.gender.toLowerCase() === gender.toLowerCase()
-    );
+    const products = await Product.find({
+        gender: gender.toLowerCase(),
+        isActive: true
+    });
     return {
         count: products.length,
         gender,
@@ -72,72 +76,71 @@ export const getProductsByGenderService = (gender) => {
 
 
 // ========== CREAR UN NUEVO PRODUCTO ==========
-export const createProductService = (productData) => {
-  const { name, category, price, stock, brand } = productData;
-  
+export const createProductService = async (productData) => {
+  const { name, category, price, stock, brand, description, image } = productData;
+
   // Verificar si ya existe un producto con el mismo nombre
-  const existingProduct = database.products.find(
-    p => p.name.toLowerCase() === name.toLowerCase()
-  );
-  
+  const existingProduct = await Product.findOne({
+    name: new RegExp(`^${name}$`, 'i')
+  });
+
   if (existingProduct) {
     throw new BusinessError('Ya existe un producto con ese nombre', 409);
   }
-  
-  const newProduct = {
-    id: getNextId('products'),
+
+  const newProduct = new Product({
     name,
     category,
     price,
     stock,
     brand: brand || '',
-    createdAt: new Date()
-  };
-  
-  database.products.push(newProduct);
+    description: description || '',
+    image: image || '',
+    isActive: true
+  });
+
+  await newProduct.save();
   return newProduct;
 };
 
 // ========== ACTUALIZAR UN PRODUCTO ==========
-export const updateProductService = (id, updateData) => {
-  const productIndex = database.products.findIndex(p => p.id === parseInt(id));
-  
-  if (productIndex === -1) {
+export const updateProductService = async (id, updateData) => {
+  const product = await Product.findById(id);
+
+  if (!product || !product.isActive) {
     throw new NotFoundError('Producto', id);
   }
-  
+
   // Si se actualiza el nombre, verificar que no exista
   if (updateData.name) {
-    const existingProduct = database.products.find(
-      p => p.name.toLowerCase() === updateData.name.toLowerCase() && 
-           p.id !== parseInt(id)
-    );
-    
+    const existingProduct = await Product.findOne({
+      name: new RegExp(`^${updateData.name}$`, 'i'),
+      _id: { $ne: id }
+    });
+
     if (existingProduct) {
       throw new BusinessError('Ya existe otro producto con ese nombre', 409);
     }
   }
-  
-  database.products[productIndex] = {
-    ...database.products[productIndex],
-    ...updateData,
-    updatedAt: new Date()
-  };
-  
-  return database.products[productIndex];
+
+  Object.assign(product, updateData);
+  await product.save();
+
+  return product;
 };
 
-// ========== ELIMINAR UN PRODUCTO ==========
-export const deleteProductService = (id) => {
-  const productIndex = database.products.findIndex(p => p.id === parseInt(id));
-  
-  if (productIndex === -1) {
+// ========== ELIMINAR UN PRODUCTO (Soft Delete) ==========
+export const deleteProductService = async (id) => {
+  const product = await Product.findById(id);
+
+  if (!product || !product.isActive) {
     throw new NotFoundError('Producto', id);
   }
-  
-  const deletedProduct = database.products[productIndex];
-  database.products.splice(productIndex, 1);
-  
-  return deletedProduct;
+
+  // Soft delete: marcamos como inactivo en lugar de eliminar
+  product.isActive = false;
+  await product.save();
+
+  return product;
 };
 

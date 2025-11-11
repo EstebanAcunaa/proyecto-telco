@@ -33,8 +33,8 @@ export const login = async (req, res, next) => {
 
 export const getProfile = async (req, res, next) => {
     try{
-        //req.user
-        const user = getProfileService(req.user.id);
+        //req.user viene del middleware de autenticación
+        const user = await getProfileService(req.user.id);
 
         res.status(200).json({
             message: 'Perfil obtenido con exito',

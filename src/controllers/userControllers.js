@@ -1,23 +1,23 @@
-import { parse } from 'dotenv';
-import {database, getNextId} from '../database/db.js';
+import User from '../models/User.js';
 import { NotFoundError, BusinessError } from '../middlewares/errorHandler.js';
 
 //Obtener todos los usuarios
 
-export const getAllUsersService = () => {
+export const getAllUsersService = async () => {
+    const users = await User.find({ isActive: true }).select('-password');
     return{
-        count: database.users.length,
-        users: database.users
+        count: users.length,
+        users: users
     };
 };
 
 
 //Obtener usuarios por ID
 
-export const getUserByIdService = (id) => {
-    const user = database.users.find(u => u.id === parseInt(id));
+export const getUserByIdService = async (id) => {
+    const user = await User.findById(id).select('-password');
 
-    if(!user){
+    if(!user || !user.isActive){
         throw new NotFoundError ('Usuario', id);
     }
     return user;
@@ -26,79 +26,84 @@ export const getUserByIdService = (id) => {
 
 //Crear usuarios nuevos
 
-export const createUserService = (userData) => {
-    const { name, email, role = 'user'} = userData;
+export const createUserService = async (userData) => {
+    const { name, email, password, role = 'user'} = userData;
 
     //Verificar si ya existe el usuario con ese email
-
-    const existingUser = database.users.find(
-        u => u.email.toLowerCase() === email.toLowerCase()
-    );
+    const existingUser = await User.findOne({
+        email: email.toLowerCase()
+    });
 
     if(existingUser){
         throw new BusinessError ('Ya existe un usuario con ese email', 409);
     }
 
-    const newUser = {
-        id: getNextId('users'),
+    const newUser = new User({
         name,
         email: email.toLowerCase(),
+        password, // La contraseña debe venir hasheada
         role,
-        createdAt: new Date()
-    };
+        isActive: true
+    });
 
-    database.users.push(newUser);
-    return newUser;
+    await newUser.save();
+
+    // Retornar sin contraseña
+    const userObject = newUser.toObject();
+    delete userObject.password;
+    return userObject;
 }
 
 
 //Actualizar usuario
 
-export const updateUserService = (id, updateData) => {
-    const userIndex = database.users.findIndex(u => u.id === parseInt(id));
+export const updateUserService = async (id, updateData) => {
+    const user = await User.findById(id);
 
-    if(userIndex === -1){
+    if(!user || !user.isActive){
         throw new NotFoundError('Usuario', id);
     }
 
     //Si actualiza el mail verifica que no exista
-
     if(updateData.email){
-        const existingUser = database.users.find(
-            u => u.email.toLowerCase() === updateData.email.toLowerCase() && u.id !== parseInt(id)
-        );
+        const existingUser = await User.findOne({
+            email: updateData.email.toLowerCase(),
+            _id: { $ne: id }
+        });
         if(existingUser) {
             throw new BusinessError('Ya existe otro usuario con ese email', 409);
         }
     }
 
-    database.users[userIndex] = {
-        ...database.users[userIndex],
-        ...updateData,
-        updateAt: new Date()
-    };
+    Object.assign(user, updateData);
+    await user.save();
 
-    return database.users[userIndex];
+    // Retornar sin contraseña
+    const userObject = user.toObject();
+    delete userObject.password;
+    return userObject;
 };
 
-//ELIMINAR USUARIO
+//ELIMINAR USUARIO (Soft Delete)
 
-export const deleteUserService = (id) => {
-    const userIndex = database.users.findIndex(u => u.id === parseInt(id));
+export const deleteUserService = async (id) => {
+    const user = await User.findById(id);
 
-    if(userIndex === -1){
+    if(!user || !user.isActive){
         throw new NotFoundError('Usuario', id);
     }
 
-    const user = database.users[userIndex];
-
     //No se pueden eliminar roles de administradores
-
     if(user.role === 'admin'){
         throw new BusinessError('No se puede eliminar un usuario con el rol de Administrador', 403);
     }
-    const deletedUser = database.users[userIndex];
-    database.users.splice(userIndex, 1);
 
-    return deletedUser;
+    // Soft delete: marcamos como inactivo
+    user.isActive = false;
+    await user.save();
+
+    // Retornar sin contraseña
+    const userObject = user.toObject();
+    delete userObject.password;
+    return userObject;
 }
